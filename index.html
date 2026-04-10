@@ -3,49 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Тайный советник — AR-квест</title>
-    <!-- Подключаем A-Frame с надежного CDN (cdnjs) -->
-    <!-- AR.js с GitHub Pages напрямую (альтернативный источник) -->
+    <title>Тайный советник — AR с явной камерой</title>
+    <!-- Локальные библиотеки (ты скачал их, они лежат рядом) -->
     <script src="./aframe.min.js"></script>
     <script src="./aframe-ar.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', 'Comic Neue', 'Comic Sans MS', cursive;
-        }
-        .camera-error {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', 'Comic Neue', cursive; }
+        .status-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #1a472a;
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            bottom: 100px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
             color: #ffec9f;
-            font-size: 1.2rem;
-            padding: 20px;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .camera-error button {
-            background: #ffc857;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #2e241f;
-            cursor: pointer;
+            text-align: center;
+            padding: 12px;
+            border-radius: 30px;
+            z-index: 300;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
         }
         .toast {
             position: fixed;
@@ -60,48 +38,16 @@
             align-items: center;
             gap: 16px;
             z-index: 150;
-            transition: bottom 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transition: bottom 0.3s;
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             border-left: 6px solid #ffc857;
             border-right: 6px solid #ffc857;
             pointer-events: none;
         }
-        .toast.show {
-            bottom: 30px;
-        }
-        .toast-icon {
-            font-size: 48px;
-            background: #5d3a1f;
-            border-radius: 60px;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .toast-text {
-            flex: 1;
-            color: #ffec9f;
-            font-weight: bold;
-            font-size: 1rem;
-            line-height: 1.3;
-            text-shadow: 1px 1px 0 #2c1a0e;
-        }
-        .toast-close {
-            background: #bb8855;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 40px;
-            padding: 6px 12px;
-            cursor: pointer;
-            pointer-events: auto;
-            font-family: inherit;
-        }
-        @media (min-width: 600px) {
-            .toast { left: auto; right: auto; width: 500px; margin: 0 auto; }
-        }
+        .toast.show { bottom: 30px; }
+        .toast-icon { font-size: 48px; background: #5d3a1f; border-radius: 60px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .toast-text { flex: 1; color: #ffec9f; font-weight: bold; font-size: 1rem; }
+        .toast-close { background: #bb8855; border: none; color: white; border-radius: 40px; padding: 6px 12px; cursor: pointer; pointer-events: auto; }
         .floating-panel {
             position: fixed;
             bottom: 20px;
@@ -115,7 +61,6 @@
             justify-content: space-between;
             gap: 12px;
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             pointer-events: auto;
         }
         .floating-panel button {
@@ -125,12 +70,9 @@
             border-radius: 40px;
             font-weight: bold;
             color: white;
-            font-size: 1rem;
             flex: 1;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .floating-panel button:active { transform: scale(0.97); }
         .modal {
             display: none;
             position: fixed;
@@ -162,50 +104,16 @@
             color: white;
             font-weight: bold;
         }
-        @media (max-width: 600px) {
-            .floating-panel button { font-size: 0.8rem; padding: 8px 12px; }
-            .toast-icon { font-size: 36px; width: 50px; height: 50px; }
-            .toast-text { font-size: 0.85rem; }
-        }
     </style>
 </head>
 <body>
 
-<div id="arSceneWrapper" style="display: none;">
-    <a-scene embedded arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; cameraConfig: { facingMode: 'environment' };">
-        <!-- Маркеры те же самые (0-4) -->
-        <a-marker type="barcode" value="0">
-            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='90' fill='%23333'/%3E%3Ccircle cx='70' cy='80' r='12' fill='white'/%3E%3Ccircle cx='130' cy='80' r='12' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpolygon points='100,110 80,140 120,140' fill='%23ffaa33'/%3E%3Cpath d='M60 60 L40 30 L70 45 Z' fill='%23666'/%3E%3Cpath d='M140 60 L160 30 L130 45 Z' fill='%23666'/%3E%3Ctext x='100' y='180' font-size='24' text-anchor='middle' fill='white' font-weight='bold'%3E🐦‍⬛%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-            <a-text value="Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-        </a-marker>
-        <a-marker type="barcode" value="1">
-            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232d6a4f'/%3E%3Ccircle cx='60' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='100' cy='70' r='28' fill='%234caf50'/%3E%3Ccircle cx='140' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='60' cy='70' r='6' fill='black'/%3E%3Ccircle cx='100' cy='60' r='6' fill='black'/%3E%3Ccircle cx='140' cy='70' r='6' fill='black'/%3E%3Cpath d='M90 110 L100 140 L110 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M50 110 L60 140 L70 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M130 110 L140 140 L150 110 Z' fill='%23d32f2f'/%3E%3Ctext x='100' y='180' font-size='28' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-            <a-text value="Посчитай камни с трещиной перед средней головой. Запиши цифру." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-        </a-marker>
-        <a-marker type="barcode" value="2">
-            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%238b5a2b'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23deb887'/%3E%3Ccircle cx='75' cy='80' r='8' fill='white'/%3E%3Ccircle cx='125' cy='80' r='8' fill='white'/%3E%3Ccircle cx='75' cy='80' r='4' fill='black'/%3E%3Ccircle cx='125' cy='80' r='4' fill='black'/%3E%3Cpath d='M90 110 Q100 130 110 110 Z' fill='%238b4513'/%3E%3Crect x='70' y='130' width='60' height='20' fill='%235d3a1a'/%3E%3Ctext x='100' y='180' font-size='30' text-anchor='middle' fill='white'%3E🪵%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-            <a-text value="Под лавочкой вырезана буква на доске. Найди её и запиши." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-        </a-marker>
-        <a-marker type="barcode" value="3">
-            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232e7d32'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%2371c837'/%3E%3Ccircle cx='75' cy='75' r='7' fill='white'/%3E%3Ccircle cx='125' cy='75' r='7' fill='white'/%3E%3Ccircle cx='75' cy='75' r='3' fill='black'/%3E%3Ccircle cx='125' cy='75' r='3' fill='black'/%3E%3Cpath d='M90 100 L100 125 L110 100 Z' fill='%234caf50'/%3E%3Cpath d='M60 50 L80 30 L90 55 Z' fill='%231b5e20'/%3E%3Cpath d='M140 50 L120 30 L110 55 Z' fill='%231b5e20'/%3E%3Ctext x='100' y='175' font-size='32' text-anchor='middle' fill='white'%3E🌿%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-            <a-text value="Сосчитай красные ленточки с бантиками на дубе. Это цифра." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-        </a-marker>
-        <a-marker type="barcode" value="4">
-            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%235d3a1a'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23d2b48c'/%3E%3Ccircle cx='70' cy='80' r='9' fill='white'/%3E%3Ccircle cx='130' cy='80' r='9' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpath d='M85 115 L100 135 L115 115 Z' fill='%238b0000'/%3E%3Crect x='65' y='140' width='70' height='15' fill='%23654321'/%3E%3Cpath d='M140 70 L170 50 L155 80 Z' fill='%23654321'/%3E%3Ctext x='100' y='185' font-size='30' text-anchor='middle' fill='white'%3E🧹%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-            <a-text value="На черенке метлы – последняя буква слова 'ЯГА'. Запиши её." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-        </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
-</div>
+<!-- Будем вставлять AR-сцену динамически -->
+<div id="arContainer"></div>
 
 <div id="taskToast" class="toast">
     <div class="toast-icon" id="toastIcon">🐦‍⬛</div>
-    <div class="toast-text" id="toastText">Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки.</div>
+    <div class="toast-text" id="toastText">Найди букву у входа в избушку Бабы-Яги</div>
     <button class="toast-close" id="closeToast">✖</button>
 </div>
 
@@ -221,51 +129,117 @@
     </div>
 </div>
 
+<div id="statusMsg" class="status-overlay">🔍 Запрос доступа к камере...</div>
+
 <script>
-    // Проверка загрузки библиотек
-    function checkLibraries() {
-        if (typeof AFRAME === 'undefined') {
-            alert('❌ Не удалось загрузить библиотеку A-Frame. Проверьте интернет-соединение и попробуйте перезагрузить страницу.');
-            return false;
-        }
-        if (typeof THREEx === 'undefined' && typeof ARjs === 'undefined') {
-            console.warn('AR.js может быть не загружен');
-        }
-        return true;
-    }
-
-    // Проверка камеры
-    async function requestCameraAccess() {
+    // Функция для получения видеопотока с тыловой камеры
+    async function getCameraStream() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            stream.getTracks().forEach(track => track.stop());
-            return true;
+            const constraints = {
+                video: {
+                    facingMode: { exact: "environment" }, // тыловая камера
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            return stream;
         } catch (err) {
-            console.error('Camera error:', err);
-            return false;
+            console.error("Ошибка при запросе камеры:", err);
+            // Пробуем без exact (любая камера)
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                return stream;
+            } catch (err2) {
+                throw new Error("Камера не доступна: " + err2.message);
+            }
         }
     }
 
-    (async function init() {
-        const libsOk = checkLibraries();
-        const hasCamera = await requestCameraAccess();
-        const wrapper = document.getElementById('arSceneWrapper');
-        if (libsOk && hasCamera) {
-            wrapper.style.display = 'block';
-        } else {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'camera-error';
-            errorDiv.innerHTML = `
-                <div>📷❌ ${!libsOk ? 'ОШИБКА ЗАГРУЗКИ БИБЛИОТЕК' : 'НЕТ ДОСТУПА К КАМЕРЕ'}</div>
-                <div>${!libsOk ? 'Проверьте интернет и перезагрузите страницу.' : 'Пожалуйста, разрешите доступ к камере и перезагрузите страницу.'}</div>
-                <button id="reloadBtn">🔄 ПЕРЕЗАГРУЗИТЬ</button>
+    // Создание AR-сцены с принудительным видеопотоком
+    async function initAR() {
+        const statusDiv = document.getElementById('statusMsg');
+        try {
+            const stream = await getCameraStream();
+            statusDiv.innerText = "📷 Камера получена, запускаем AR...";
+            
+            // Создаём элемент video и передаём поток
+            const videoElement = document.createElement('video');
+            videoElement.srcObject = stream;
+            videoElement.autoplay = true;
+            videoElement.muted = true;
+            videoElement.playsInline = true;
+            await videoElement.play();
+            
+            // Теперь создаём a-scene и вручную задаём источник видео
+            const scene = document.createElement('a-scene');
+            scene.setAttribute('embedded', '');
+            scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;');
+            // ВАЖНО: Переопределяем видеоэлемент в AR.js (костыль)
+            // AR.js ищет video в своей иерархии, но мы подменим
+            scene.addEventListener('loaded', () => {
+                const arCamera = scene.querySelector('a-camera');
+                if (arCamera && arCamera.components['material']) {
+                    // хитрый способ: найти видео внутри material
+                    const videoTexture = arCamera.components['material'].material.map.image;
+                    if (videoTexture) {
+                        // заменяем
+                        videoTexture.srcObject = stream;
+                    }
+                }
+                statusDiv.style.display = 'none';
+            });
+            
+            // Добавляем маркеры (как в твоём оригинале)
+            scene.innerHTML = `
+                <a-marker type="barcode" value="0">
+                    <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+                    <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='90' fill='%23333'/%3E%3Ccircle cx='70' cy='80' r='12' fill='white'/%3E%3Ccircle cx='130' cy='80' r='12' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpolygon points='100,110 80,140 120,140' fill='%23ffaa33'/%3E%3Cpath d='M60 60 L40 30 L70 45 Z' fill='%23666'/%3E%3Cpath d='M140 60 L160 30 L130 45 Z' fill='%23666'/%3E%3Ctext x='100' y='180' font-size='24' text-anchor='middle' fill='white' font-weight='bold'%3E🐦‍⬛%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+                    <a-text value="Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+                </a-marker>
+                <a-marker type="barcode" value="1">
+                    <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+                    <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232d6a4f'/%3E%3Ccircle cx='60' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='100' cy='70' r='28' fill='%234caf50'/%3E%3Ccircle cx='140' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='60' cy='70' r='6' fill='black'/%3E%3Ccircle cx='100' cy='60' r='6' fill='black'/%3E%3Ccircle cx='140' cy='70' r='6' fill='black'/%3E%3Cpath d='M90 110 L100 140 L110 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M50 110 L60 140 L70 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M130 110 L140 140 L150 110 Z' fill='%23d32f2f'/%3E%3Ctext x='100' y='180' font-size='28' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+                    <a-text value="Посчитай камни с трещиной перед средней головой. Запиши цифру." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+                </a-marker>
+                <a-marker type="barcode" value="2">
+                    <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+                    <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%238b5a2b'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23deb887'/%3E%3Ccircle cx='75' cy='80' r='8' fill='white'/%3E%3Ccircle cx='125' cy='80' r='8' fill='white'/%3E%3Ccircle cx='75' cy='80' r='4' fill='black'/%3E%3Ccircle cx='125' cy='80' r='4' fill='black'/%3E%3Cpath d='M90 110 Q100 130 110 110 Z' fill='%238b4513'/%3E%3Crect x='70' y='130' width='60' height='20' fill='%235d3a1a'/%3E%3Ctext x='100' y='180' font-size='30' text-anchor='middle' fill='white'%3E🪵%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+                    <a-text value="Под лавочкой вырезана буква на доске. Найди её и запиши." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+                </a-marker>
+                <a-marker type="barcode" value="3">
+                    <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+                    <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232e7d32'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%2371c837'/%3E%3Ccircle cx='75' cy='75' r='7' fill='white'/%3E%3Ccircle cx='125' cy='75' r='7' fill='white'/%3E%3Ccircle cx='75' cy='75' r='3' fill='black'/%3E%3Ccircle cx='125' cy='75' r='3' fill='black'/%3E%3Cpath d='M90 100 L100 125 L110 100 Z' fill='%234caf50'/%3E%3Cpath d='M60 50 L80 30 L90 55 Z' fill='%231b5e20'/%3E%3Cpath d='M140 50 L120 30 L110 55 Z' fill='%231b5e20'/%3E%3Ctext x='100' y='175' font-size='32' text-anchor='middle' fill='white'%3E🌿%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+                    <a-text value="Сосчитай красные ленточки с бантиками на дубе. Это цифра." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+                </a-marker>
+                <a-marker type="barcode" value="4">
+                    <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+                    <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%235d3a1a'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23d2b48c'/%3E%3Ccircle cx='70' cy='80' r='9' fill='white'/%3E%3Ccircle cx='130' cy='80' r='9' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpath d='M85 115 L100 135 L115 115 Z' fill='%238b0000'/%3E%3Crect x='65' y='140' width='70' height='15' fill='%23654321'/%3E%3Cpath d='M140 70 L170 50 L155 80 Z' fill='%23654321'/%3E%3Ctext x='100' y='185' font-size='30' text-anchor='middle' fill='white'%3E🧹%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+                    <a-text value="На черенке метлы – последняя буква слова 'ЯГА'. Запиши её." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+                </a-marker>
+                <a-entity camera></a-entity>
             `;
-            document.body.appendChild(errorDiv);
-            document.getElementById('reloadBtn')?.addEventListener('click', () => location.reload());
+            
+            document.getElementById('arContainer').appendChild(scene);
+            
+            // Обработка таблетки (маркеры найдены)
+            setTimeout(() => {
+                const markers = document.querySelectorAll('a-marker');
+                markers.forEach(marker => {
+                    marker.addEventListener('markerFound', () => {
+                        const val = marker.getAttribute('value');
+                        showToast(val);
+                    });
+                });
+            }, 2000);
+            
+        } catch (error) {
+            statusDiv.innerText = "❌ Ошибка: " + error.message;
+            console.error(error);
         }
-    })();
-
-    // Таблетка
+    }
+    
+    // Таблетка (тост)
     const tasks = {
         "0": { icon: "🐦‍⬛", text: "Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." },
         "1": { icon: "🐉", text: "Посчитай камни с трещиной перед средней головой. Запиши цифру." },
@@ -287,17 +261,9 @@
         if (toastTimeout) clearTimeout(toastTimeout);
         toastTimeout = setTimeout(() => toast.classList.remove('show'), 5000);
     }
-    function hideToast() { toast.classList.remove('show'); if (toastTimeout) clearTimeout(toastTimeout); }
-    closeToastBtn.addEventListener('click', hideToast);
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            document.querySelectorAll('a-marker').forEach(marker => {
-                marker.addEventListener('markerFound', () => showToast(marker.getAttribute('value')));
-            });
-        }, 2000);
-    });
-
-    // Заметки и код
+    closeToastBtn.addEventListener('click', () => toast.classList.remove('show'));
+    
+    // Заметки и код (полностью как раньше)
     const CORRECT_CODE = "В4К2А";
     let notesField, saveNotesBtn, codeInput, checkBtn, resultDiv, resetBtn;
     function buildNotesUI() {
@@ -319,7 +285,9 @@
     document.getElementById('notesBtn').addEventListener('click',()=>showModal('notes'));
     document.getElementById('codeBtn').addEventListener('click',()=>showModal('code'));
     document.getElementById('closeModal').addEventListener('click',()=>document.getElementById('modal').style.display='none');
-    window.addEventListener('load',()=>{ if(!localStorage.getItem('ar_quest_shown') && document.getElementById('arSceneWrapper').style.display==='block'){ alert('🔍 ТАЙНЫЙ СОВЕТНИК\n\nНаведи камеру на чёрно-белые маркеры. При сканировании снизу появится задание. Записывай символы в заметки и собери код!'); localStorage.setItem('ar_quest_shown','true'); } });
+    
+    // Запускаем
+    initAR();
 </script>
 </body>
 </html>
