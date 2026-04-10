@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Тайный советник — AR с таблетками-заданиями</title>
+    <title>Тайный советник — AR-квест с проверкой камеры</title>
     <!-- Подключаем AR.js -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -17,6 +17,35 @@
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', 'Comic Neue', 'Comic Sans MS', cursive;
+        }
+        /* Блок ошибки (если камера недоступна) */
+        .camera-error {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a472a;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #ffec9f;
+            font-size: 1.2rem;
+            padding: 20px;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .camera-error button {
+            background: #ffc857;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2e241f;
+            cursor: pointer;
         }
 
         /* --- ТАБЛЕТКА (тост) --- */
@@ -148,46 +177,48 @@
 </head>
 <body>
 
-<!-- AR-сцена -->
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
-    
-    <!-- Маркер 0: Ворон -->
-    <a-marker type="barcode" value="0" id="marker0">
-        <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-        <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='90' fill='%23333'/%3E%3Ccircle cx='70' cy='80' r='12' fill='white'/%3E%3Ccircle cx='130' cy='80' r='12' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpolygon points='100,110 80,140 120,140' fill='%23ffaa33'/%3E%3Cpath d='M60 60 L40 30 L70 45 Z' fill='%23666'/%3E%3Cpath d='M140 60 L160 30 L130 45 Z' fill='%23666'/%3E%3Ctext x='100' y='180' font-size='24' text-anchor='middle' fill='white' font-weight='bold'%3E🐦‍⬛%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-        <a-text value="Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-    </a-marker>
+<!-- AR-сцена (будет показана только если камера доступна) -->
+<div id="arSceneWrapper" style="display: none;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+        
+        <!-- Маркер 0: Ворон -->
+        <a-marker type="barcode" value="0" id="marker0">
+            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='90' fill='%23333'/%3E%3Ccircle cx='70' cy='80' r='12' fill='white'/%3E%3Ccircle cx='130' cy='80' r='12' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpolygon points='100,110 80,140 120,140' fill='%23ffaa33'/%3E%3Cpath d='M60 60 L40 30 L70 45 Z' fill='%23666'/%3E%3Cpath d='M140 60 L160 30 L130 45 Z' fill='%23666'/%3E%3Ctext x='100' y='180' font-size='24' text-anchor='middle' fill='white' font-weight='bold'%3E🐦‍⬛%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+            <a-text value="Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+        </a-marker>
 
-    <!-- Маркер 1: Горыныч -->
-    <a-marker type="barcode" value="1" id="marker1">
-        <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-        <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232d6a4f'/%3E%3Ccircle cx='60' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='100' cy='70' r='28' fill='%234caf50'/%3E%3Ccircle cx='140' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='60' cy='70' r='6' fill='black'/%3E%3Ccircle cx='100' cy='60' r='6' fill='black'/%3E%3Ccircle cx='140' cy='70' r='6' fill='black'/%3E%3Cpath d='M90 110 L100 140 L110 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M50 110 L60 140 L70 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M130 110 L140 140 L150 110 Z' fill='%23d32f2f'/%3E%3Ctext x='100' y='180' font-size='28' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-        <a-text value="Посчитай камни с трещиной перед средней головой. Запиши цифру." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-    </a-marker>
+        <!-- Маркер 1: Горыныч -->
+        <a-marker type="barcode" value="1" id="marker1">
+            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232d6a4f'/%3E%3Ccircle cx='60' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='100' cy='70' r='28' fill='%234caf50'/%3E%3Ccircle cx='140' cy='80' r='25' fill='%234caf50'/%3E%3Ccircle cx='60' cy='70' r='6' fill='black'/%3E%3Ccircle cx='100' cy='60' r='6' fill='black'/%3E%3Ccircle cx='140' cy='70' r='6' fill='black'/%3E%3Cpath d='M90 110 L100 140 L110 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M50 110 L60 140 L70 110 Z' fill='%23d32f2f'/%3E%3Cpath d='M130 110 L140 140 L150 110 Z' fill='%23d32f2f'/%3E%3Ctext x='100' y='180' font-size='28' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+            <a-text value="Посчитай камни с трещиной перед средней головой. Запиши цифру." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+        </a-marker>
 
-    <!-- Маркер 2: Домовой -->
-    <a-marker type="barcode" value="2" id="marker2">
-        <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-        <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%238b5a2b'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23deb887'/%3E%3Ccircle cx='75' cy='80' r='8' fill='white'/%3E%3Ccircle cx='125' cy='80' r='8' fill='white'/%3E%3Ccircle cx='75' cy='80' r='4' fill='black'/%3E%3Ccircle cx='125' cy='80' r='4' fill='black'/%3E%3Cpath d='M90 110 Q100 130 110 110 Z' fill='%238b4513'/%3E%3Crect x='70' y='130' width='60' height='20' fill='%235d3a1a'/%3E%3Ctext x='100' y='180' font-size='30' text-anchor='middle' fill='white'%3E🪵%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-        <a-text value="Под лавочкой вырезана буква на доске. Найди её и запиши." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-    </a-marker>
+        <!-- Маркер 2: Домовой -->
+        <a-marker type="barcode" value="2" id="marker2">
+            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%238b5a2b'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23deb887'/%3E%3Ccircle cx='75' cy='80' r='8' fill='white'/%3E%3Ccircle cx='125' cy='80' r='8' fill='white'/%3E%3Ccircle cx='75' cy='80' r='4' fill='black'/%3E%3Ccircle cx='125' cy='80' r='4' fill='black'/%3E%3Cpath d='M90 110 Q100 130 110 110 Z' fill='%238b4513'/%3E%3Crect x='70' y='130' width='60' height='20' fill='%235d3a1a'/%3E%3Ctext x='100' y='180' font-size='30' text-anchor='middle' fill='white'%3E🪵%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+            <a-text value="Под лавочкой вырезана буква на доске. Найди её и запиши." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+        </a-marker>
 
-    <!-- Маркер 3: Леший -->
-    <a-marker type="barcode" value="3" id="marker3">
-        <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-        <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232e7d32'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%2371c837'/%3E%3Ccircle cx='75' cy='75' r='7' fill='white'/%3E%3Ccircle cx='125' cy='75' r='7' fill='white'/%3E%3Ccircle cx='75' cy='75' r='3' fill='black'/%3E%3Ccircle cx='125' cy='75' r='3' fill='black'/%3E%3Cpath d='M90 100 L100 125 L110 100 Z' fill='%234caf50'/%3E%3Cpath d='M60 50 L80 30 L90 55 Z' fill='%231b5e20'/%3E%3Cpath d='M140 50 L120 30 L110 55 Z' fill='%231b5e20'/%3E%3Ctext x='100' y='175' font-size='32' text-anchor='middle' fill='white'%3E🌿%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-        <a-text value="Сосчитай красные ленточки с бантиками на дубе. Это цифра." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-    </a-marker>
+        <!-- Маркер 3: Леший -->
+        <a-marker type="barcode" value="3" id="marker3">
+            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232e7d32'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%2371c837'/%3E%3Ccircle cx='75' cy='75' r='7' fill='white'/%3E%3Ccircle cx='125' cy='75' r='7' fill='white'/%3E%3Ccircle cx='75' cy='75' r='3' fill='black'/%3E%3Ccircle cx='125' cy='75' r='3' fill='black'/%3E%3Cpath d='M90 100 L100 125 L110 100 Z' fill='%234caf50'/%3E%3Cpath d='M60 50 L80 30 L90 55 Z' fill='%231b5e20'/%3E%3Cpath d='M140 50 L120 30 L110 55 Z' fill='%231b5e20'/%3E%3Ctext x='100' y='175' font-size='32' text-anchor='middle' fill='white'%3E🌿%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+            <a-text value="Сосчитай красные ленточки с бантиками на дубе. Это цифра." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+        </a-marker>
 
-    <!-- Маркер 4: Баба-Яга -->
-    <a-marker type="barcode" value="4" id="marker4">
-        <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
-        <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%235d3a1a'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23d2b48c'/%3E%3Ccircle cx='70' cy='80' r='9' fill='white'/%3E%3Ccircle cx='130' cy='80' r='9' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpath d='M85 115 L100 135 L115 115 Z' fill='%238b0000'/%3E%3Crect x='65' y='140' width='70' height='15' fill='%23654321'/%3E%3Cpath d='M140 70 L170 50 L155 80 Z' fill='%23654321'/%3E%3Ctext x='100' y='185' font-size='30' text-anchor='middle' fill='white'%3E🧹%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
-        <a-text value="На черенке метлы – последняя буква слова 'ЯГА'. Запиши её." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
-    </a-marker>
+        <!-- Маркер 4: Баба-Яга -->
+        <a-marker type="barcode" value="4" id="marker4">
+            <a-plane position="0 0.1 0" rotation="-90 0 0" width="1.8" height="2.0" color="#4a2e1e" opacity="0.85"></a-plane>
+            <a-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%235d3a1a'/%3E%3Ccircle cx='100' cy='90' r='45' fill='%23d2b48c'/%3E%3Ccircle cx='70' cy='80' r='9' fill='white'/%3E%3Ccircle cx='130' cy='80' r='9' fill='white'/%3E%3Ccircle cx='70' cy='80' r='5' fill='black'/%3E%3Ccircle cx='130' cy='80' r='5' fill='black'/%3E%3Cpath d='M85 115 L100 135 L115 115 Z' fill='%238b0000'/%3E%3Crect x='65' y='140' width='70' height='15' fill='%23654321'/%3E%3Cpath d='M140 70 L170 50 L155 80 Z' fill='%23654321'/%3E%3Ctext x='100' y='185' font-size='30' text-anchor='middle' fill='white'%3E🧹%3C/text%3E%3C/svg%3E" position="0 0.8 0" width="1.2" height="1.2"></a-image>
+            <a-text value="На черенке метлы – последняя буква слова 'ЯГА'. Запиши её." align="center" position="0 -0.4 0" color="#ffec9f" scale="0.7 0.7 0.7" width="2.5"></a-text>
+        </a-marker>
 
-    <a-entity camera></a-entity>
-</a-scene>
+        <a-entity camera></a-entity>
+    </a-scene>
+</div>
 
 <!-- ТАБЛЕТКА (тост) -->
 <div id="taskToast" class="toast">
@@ -211,7 +242,43 @@
 </div>
 
 <script>
-    // ---------- ДАННЫЕ ДЛЯ ТАБЛЕТКИ (маркер value -> иконка и текст) ----------
+    // ---------- ПРОВЕРКА ДОСТУПА К КАМЕРЕ ----------
+    const arWrapper = document.getElementById('arSceneWrapper');
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'camera-error';
+    errorDiv.innerHTML = `
+        <div>📷❌ НЕТ ДОСТУПА К КАМЕРЕ</div>
+        <div>Для работы квеста нужно разрешить использовать камеру.<br>
+        Проверьте настройки браузера и перезагрузите страницу.</div>
+        <button id="reloadBtn">🔄 ПЕРЕЗАГРУЗИТЬ И РАЗРЕШИТЬ</button>
+    `;
+
+    async function requestCameraAccess() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop());
+            return true;
+        } catch (err) {
+            console.error('Camera error:', err);
+            return false;
+        }
+    }
+
+    (async function init() {
+        const hasCamera = await requestCameraAccess();
+        if (hasCamera) {
+            arWrapper.style.display = 'block';
+            // Удаляем блок ошибки, если он был добавлен
+            if (document.body.contains(errorDiv)) errorDiv.remove();
+        } else {
+            document.body.appendChild(errorDiv);
+            document.getElementById('reloadBtn').addEventListener('click', () => {
+                location.reload();
+            });
+        }
+    })();
+
+    // ---------- ДАННЫЕ ДЛЯ ТАБЛЕТКИ ----------
     const tasks = {
         "0": { icon: "🐦‍⬛", text: "Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." },
         "1": { icon: "🐉", text: "Посчитай камни с трещиной перед средней головой. Запиши цифру." },
@@ -220,12 +287,10 @@
         "4": { icon: "🧹", text: "На черенке метлы – последняя буква слова 'ЯГА'. Запиши её." }
     };
 
-    // Элементы таблетки
     const toast = document.getElementById('taskToast');
     const toastIcon = document.getElementById('toastIcon');
     const toastText = document.getElementById('toastText');
     const closeToastBtn = document.getElementById('closeToast');
-
     let toastTimeout = null;
 
     function showToast(markerValue) {
@@ -233,28 +298,20 @@
         if (!task) return;
         toastIcon.innerHTML = task.icon;
         toastText.innerHTML = task.text;
-        // Показываем таблетку
         toast.classList.add('show');
-        // Сбрасываем предыдущий таймер
         if (toastTimeout) clearTimeout(toastTimeout);
-        // Автоматически скрыть через 5 секунд
         toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
         }, 5000);
     }
-
     function hideToast() {
         toast.classList.remove('show');
         if (toastTimeout) clearTimeout(toastTimeout);
     }
-
-    // Ручное закрытие по крестику
     closeToastBtn.addEventListener('click', hideToast);
 
-    // ---------- ПОДПИСКА НА СОБЫТИЯ AR.JS (появление маркера) ----------
-    // Ждём загрузки сцены и вешаем обработчики на каждый маркер
+    // Подписка на события появления маркеров (только если сцена загружена)
     window.addEventListener('load', () => {
-        // Небольшая задержка, чтобы AR.js инициализировался
         setTimeout(() => {
             const markers = document.querySelectorAll('a-marker');
             markers.forEach(marker => {
@@ -262,12 +319,11 @@
                     const value = marker.getAttribute('value');
                     if (value !== null) showToast(value);
                 });
-                // При желании можно добавить markerLost для скрытия таблетки, но не будем, чтобы не мигала
             });
-        }, 1000);
+        }, 1500);
     });
 
-    // ---------- ЛОГИКА ЗАМЕТОК И КОДА (как раньше) ----------
+    // ---------- ЛОГИКА ЗАМЕТОК И КОДА ----------
     const CORRECT_CODE = "В4К2А";
     let notesField, saveNotesBtn, codeInput, checkBtn, resultDiv, resetBtn;
 
@@ -289,7 +345,6 @@
             <button id="resetGameBtn" style="background:#bb8855; color:white; border:none; padding:10px 20px; border-radius:40px; margin-top:12px;">🔄 Начать заново</button>
         `;
     }
-
     function loadNotes() {
         const saved = localStorage.getItem('taimny_sovetnik_notes');
         if (saved !== null && notesField) notesField.value = saved;
@@ -327,7 +382,6 @@
             resDiv.style.background = "#f5ddc6";
         }
     }
-
     function showModal(type) {
         const modal = document.getElementById('modal');
         const modalBody = document.getElementById('modalBody');
@@ -347,21 +401,20 @@
         }
         modal.style.display = 'flex';
     }
-
     document.getElementById('notesBtn').addEventListener('click', () => showModal('notes'));
     document.getElementById('codeBtn').addEventListener('click', () => showModal('code'));
     document.getElementById('closeModal').addEventListener('click', () => {
         document.getElementById('modal').style.display = 'none';
     });
 
-    // Приветствие при первом запуске
+    // Приветствие
     window.addEventListener('load', () => {
         setTimeout(() => {
-            if (!localStorage.getItem('ar_quest_shown')) {
+            if (!localStorage.getItem('ar_quest_shown') && arWrapper.style.display === 'block') {
                 alert('🔍 ТАЙНЫЙ СОВЕТНИК\n\nНаведи камеру на чёрно-белые маркеры. При сканировании снизу появится задание. Записывай символы в заметки и собери код!');
                 localStorage.setItem('ar_quest_shown', 'true');
             }
-        }, 1500);
+        }, 2000);
     });
 </script>
 </body>
