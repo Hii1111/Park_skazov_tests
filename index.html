@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Тайный советник — квест в парке «Сказок»</title>
+    <title>Тайный советник — квест в парке «Сказов»</title>
     <!-- Локальные библиотеки (лежат рядом) -->
     <script src="./aframe.min.js"></script>
     <script src="./aframe-ar.js"></script>
@@ -29,7 +29,7 @@
             background: linear-gradient(135deg, #1e4a2f 0%, #0e2a1a 100%);
             z-index: 1000;
             overflow-y: auto;
-            padding: 20px;
+            padding: 30px 20px 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -45,12 +45,13 @@
             margin: 20px auto;
         }
         .welcome-card h1 {
-            font-size: 2.2rem;
+            font-size: 2rem;
             text-align: center;
             color: #4a2e1e;
             border-left: 8px solid #ffc857;
             padding-left: 20px;
             margin-bottom: 20px;
+            word-break: break-word;
         }
         .welcome-card h2 {
             font-size: 1.4rem;
@@ -101,6 +102,18 @@
             position: absolute;
             left: 0;
             top: 0;
+        }
+        @media (max-width: 550px) {
+            .welcome-card {
+                padding: 20px 18px;
+            }
+            .welcome-card h1 {
+                font-size: 1.6rem;
+                padding-left: 15px;
+            }
+            .welcome-card h2 {
+                font-size: 1.2rem;
+            }
         }
 
         /* ========= ОСНОВНОЙ ЭКРАН (AR) ========= */
@@ -212,7 +225,7 @@
 <div id="welcomeScreen" class="welcome-screen">
     <div class="welcome-card">
         <h1>🍂 Тайный советник 🍄</h1>
-        <p>Добро пожаловать в <strong>парк «Сказок»</strong>! Вы готовы стать настоящим следопытом?</p>
+        <p>Добро пожаловать в <strong>парк «Сказов»</strong>! Вы готовы стать настоящим следопытом?</p>
         
         <h2>🌲 Что вас ждёт</h2>
         <ul class="rules-list">
@@ -224,11 +237,10 @@
             <li>Получите приз у администратора в шатре «Тайный советник»!</li>
         </ul>
 
-        <h2>🏰 О парке «Сказок»</h2>
+        <h2>🏰 О парке «Сказов»</h2>
         <div class="park-info">
-            <p>📍 <strong>Парк «Сказок»</strong> — это уникальное место, где оживают герои русских народных сказок. Здесь вы встретите избушку Бабы-Яги, Змея Горыныча с камнями, дуб с ленточками Лешего и многое другое. Парк расположен в живописном лесу и работает ежедневно с 10:00 до 20:00.</p>
+            <p>📍 <strong>Парк «Сказов»</strong> — это уникальное место, где оживают герои русских народных сказок. Здесь вы встретите избушку Бабы-Яги, Змея Горыныча с камнями, дуб с ленточками Лешего и многое другое.</p>
             <p>✨ Официальный сайт: <a href="https://parkskazov.ru/" target="_blank">parkskazov.ru</a></p>
-            <p>🎟️ Адрес: г. Москва, ул. Сказочная, д. 1 (м. «Парк Сказок»).</p>
             <p>🌳 В парке есть кафе, детские площадки и аттракционы. Приятного путешествия!</p>
         </div>
 
