@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Тайный советник — квест в парке «Сказов»</title>
-    <!-- Локальные библиотеки (лежат рядом) -->
+    <!-- Локальные библиотеки AR -->
     <script src="./aframe.min.js"></script>
     <script src="./aframe-ar.js"></script>
     <style>
@@ -253,13 +253,6 @@
             overflow: auto;
             text-align: center;
         }
-        .modal-content iframe {
-            width: 100%;
-            height: 70vh;
-            border: none;
-            border-radius: 20px;
-            background: #fff;
-        }
         .close-modal {
             background: #bb8855;
             border: none;
@@ -270,15 +263,10 @@
             font-weight: bold;
             cursor: pointer;
         }
-        .map-fallback {
-            padding: 20px;
-            background: #f0e2ca;
+        .modal-content img {
+            width: 100%;
             border-radius: 20px;
-            color: #2e241f;
-        }
-        .map-fallback a {
-            color: #5f8b4c;
-            font-weight: bold;
+            border: 2px solid #ffc857;
         }
     </style>
 </head>
@@ -329,7 +317,7 @@
         <button id="mapBtn">🗺️ КАРТА</button>
     </div>
 
-    <!-- Модальное окно (универсальное) -->
+    <!-- Модальное окно (для заметок, кода и карты) -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <div id="modalBody"></div>
@@ -341,7 +329,7 @@
 </div>
 
 <script>
-    // ---------- ФУНКЦИИ КВЕСТА ----------
+    // ---------- ДАННЫЕ КВЕСТА ----------
     const tasks = {
         "0": { icon: "🐦‍⬛", text: "Найди букву у входа в избушку Бабы-Яги. Запиши её в заметки." },
         "1": { icon: "🐉", text: "Посчитай камни с трещиной перед средней головой. Запиши цифру." },
@@ -352,6 +340,7 @@
     const CORRECT_CODE = "В4К2А";
     let notesField, saveNotesBtn, codeInput, checkBtn, resetBtn;
 
+    // ---------- UI ФУНКЦИИ ----------
     function buildNotesUI() {
         return `<h3>📔 Блокнот советника</h3><p>Записывай найденные символы по порядку (буква, цифра, буква, цифра, буква).</p>
         <textarea id="notesField" rows="4" style="width:100%; padding:10px; border-radius:20px; margin:10px 0;"></textarea>
@@ -366,11 +355,8 @@
     }
     function buildMapUI() {
         return `<h3 style="margin-bottom:10px;">🗺️ Карта парка «Сказов»</h3>
-        <iframe src="https://parkskazov.ru/map" allow="geolocation"></iframe>
-        <div class="map-fallback">
-            <p>Если карта не загрузилась, откройте её в браузере:<br>
-            <a href="https://parkskazov.ru/map" target="_blank">parkskazov.ru/map</a></p>
-        </div>`;
+        <img src="https://static.tildacdn.com/tild6230-3363-4663-a132-386237653936/__.svg" alt="Карта парка" style="width:100%; border-radius:20px; border:2px solid #ffc857;" />
+        <p style="margin-top:12px; font-size:0.9rem; color:#f0e2ca;">← Разводите пальцы, чтобы увеличить →</p>`;
     }
 
     function loadNotes() {
@@ -549,7 +535,7 @@
         }
     }
 
-    // ---------- ЗАПУСК ----------
+    // ---------- ЗАПУСК ПОСЛЕ НАЖАТИЯ КНОПКИ ----------
     document.getElementById('startQuestBtn').addEventListener('click', async () => {
         document.getElementById('welcomeScreen').style.display = 'none';
         document.getElementById('arContainer').style.display = 'block';
